@@ -7,40 +7,49 @@ const (
 	EOF     = "EOF"
 
 	// Identifiers + literals
-	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT   = "INT"   // 1343456
+	STRING  = "STRING"  // "foo"
+	IDENT   = "IDENT"   // add, foobar, x, y, ...
+	NUM     = "NUM"     // 1343456 or 0.987
+	LINENO  = "LINENO"  // line number
 
 	// Operators
 	ASSIGN   = "="
 	PLUS     = "+"
 	MINUS    = "-"
-	BANG     = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
 
-	LT = "<"
-	GT = ">"
-
-	EQ     = "=="
-	NOT_EQ = "!="
+	LT     = "<"
+	GT     = ">"
+	NOT_EQ = "<>"
 
 	// Delimiters
-	COMMA     = ","
 	SEMICOLON = ";"
+	COMMA = ","
+	COLON = ":"
 
 	LPAREN = "("
 	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
+
+	APOS   = "'"
 
 	// Keywords
-	FUNCTION = "FUNCTION"
-	LET      = "LET"
-	TRUE     = "TRUE"
-	FALSE    = "FALSE"
+	DIM      = "DIM"
 	IF       = "IF"
+	THEN     = "THEN"
 	ELSE     = "ELSE"
+	ON       = "ON"
+	GOTO     = "GOTO"
+	GOSUB    = "GOSUB"
 	RETURN   = "RETURN"
+	FOR      = "FOR"
+	TO       = "TO"
+	STEP     = "STEP"
+	NEXT     = "NEXT"
+	DATA     = "DATA"
+	REM      = "REM"
+	AND      = "AND"
+	OR       = "OR"
 )
 
 type Token struct {
@@ -49,13 +58,22 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"fn":     FUNCTION,
-	"let":    LET,
-	"true":   TRUE,
-	"false":  FALSE,
-	"if":     IF,
-	"else":   ELSE,
-	"return": RETURN,
+	"DIM":    DIM,
+	"IF":     IF,
+	"THEN":   THEN,
+	"ELSE":   ELSE,
+	"ON":     ON,
+	"GOTO":   GOTO,
+	"GOSUB":  GOSUB,
+	"RETURN": RETURN,
+	"FOR":    FOR,
+	"TO":     TO,
+	"STEP":   STEP,
+	"NEXT":   NEXT,
+	"DATA":   DATA,
+	"REM":    REM,
+	"AND":    AND,
+	"OR":     OR,
 }
 
 func LookupIdent(ident string) TokenType {

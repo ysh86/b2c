@@ -18,62 +18,74 @@ func New(input string) *Lexer {
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
-	l.skipWhitespace()
+	isNewLine := l.skipWhitespace()
+	isNewLine = (isNewLine || l.position == 0)
 
 	switch l.ch {
 	case '=':
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.EQ, Literal: literal}
-		} else {
-			tok = newToken(token.ASSIGN, l.ch)
-		}
+		tok = newToken(token.ASSIGN, l.ch)
 	case '+':
 		tok = newToken(token.PLUS, l.ch)
 	case '-':
 		tok = newToken(token.MINUS, l.ch)
-	case '!':
-		if l.peekChar() == '=' {
+	case '*':
+		tok = newToken(token.ASTERISK, l.ch)
+	case '/':
+		tok = newToken(token.SLASH, l.ch)
+	case '<':
+		if l.peekChar() == '>' {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.NOT_EQ, Literal: literal}
 		} else {
-			tok = newToken(token.BANG, l.ch)
+			tok = newToken(token.LT, l.ch)
 		}
-	case '/':
-		tok = newToken(token.SLASH, l.ch)
-	case '*':
-		tok = newToken(token.ASTERISK, l.ch)
-	case '<':
-		tok = newToken(token.LT, l.ch)
 	case '>':
 		tok = newToken(token.GT, l.ch)
 	case ';':
 		tok = newToken(token.SEMICOLON, l.ch)
 	case ',':
 		tok = newToken(token.COMMA, l.ch)
-	case '{':
-		tok = newToken(token.LBRACE, l.ch)
-	case '}':
-		tok = newToken(token.RBRACE, l.ch)
+	case ':':
+		tok = newToken(token.COLON, l.ch)
 	case '(':
 		tok = newToken(token.LPAREN, l.ch)
 	case ')':
 		tok = newToken(token.RPAREN, l.ch)
+	case '\'':
+		l.readChar()
+		tok.Type = token.REM
+		tok.Literal = l.readData()
+		return tok
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
 	default:
-		if isLetter(l.ch) {
+		if l.ch == '"' {
+			l.readChar()
+			tok.Type = token.STRING
+			tok.Literal = l.readString()
+			if l.ch != '"' {
+				tok = newToken(token.ILLEGAL, l.ch)
+			}
+			l.readChar()
+			return tok
+		} else if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
+			if tok.Type == token.DATA || tok.Type == token.REM {
+				tok.Literal = l.readData()
+			}
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = token.INT
-			tok.Literal = l.readNumber()
+			if isNewLine {
+				tok.Type = token.LINENO
+				tok.Literal = l.readInteger()
+			} else {
+				tok.Type = token.NUM
+				tok.Literal = l.readNumber()
+			}
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
@@ -84,10 +96,17 @@ func (l *Lexer) NextToken() token.Token {
 	return tok
 }
 
-func (l *Lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+func (l *Lexer) skipWhitespace() (isNewLine bool) {
+	isNewLine = false
+	for isSpace(l.ch) || isCRLF(l.ch) {
+		if isCRLF(l.ch) {
+			isNewLine = true
+		} else {
+			isNewLine = false
+		}
 		l.readChar()
 	}
+	return
 }
 
 func (l *Lexer) readChar() {
@@ -108,15 +127,37 @@ func (l *Lexer) peekChar() byte {
 	}
 }
 
-func (l *Lexer) readIdentifier() string {
+func (l *Lexer) readData() string {
+	for isSpace(l.ch) {
+		l.readChar()
+	}
 	position := l.position
-	for isLetter(l.ch) {
+	for l.ch != ':' && !isCRLF(l.ch) && l.ch != 0 {
 		l.readChar()
 	}
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) readNumber() string {
+func (l *Lexer) readString() string {
+	position := l.position
+	for l.ch != '"' && !isCRLF(l.ch) && l.ch != 0 {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readIdentifier() string {
+	position := l.position
+	for isLetter(l.ch) || isDigit(l.ch) {
+		l.readChar()
+	}
+	if l.ch == '$' {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readInteger() string {
 	position := l.position
 	for isDigit(l.ch) {
 		l.readChar()
@@ -124,8 +165,24 @@ func (l *Lexer) readNumber() string {
 	return l.input[position:l.position]
 }
 
+func (l *Lexer) readNumber() string {
+	position := l.position
+	for isDigit(l.ch) || l.ch == '.' {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func isSpace(ch byte) bool {
+	return ch == ' ' || ch == '\t'
+}
+
+func isCRLF(ch byte) bool {
+	return ch == '\n' || ch == '\r'
+}
+
 func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z'
 }
 
 func isDigit(ch byte) bool {

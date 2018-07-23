@@ -7,6 +7,17 @@ import (
 	"testing"
 )
 
+/*
+500 REM rem1 :' rem2
+550 *GOGO:REM rem3
+600
+700 *GOGO1:*GOGO2:
+1000 DIM A(5),B(6),ADD(10,15),A$(3):REM rem:DIM C(7)
+1100 DIM A()
+1200 DIM A(1.2)
+1300 DIM A(1, 2.3)
+*/
+
 func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input              string

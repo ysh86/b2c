@@ -41,12 +41,93 @@ func (p *Program) String() string {
 
 	for _, s := range p.Statements {
 		out.WriteString(s.String())
+		out.WriteString("\n")
 	}
 
 	return out.String()
 }
 
 // Statements
+type LineNoStatement struct {
+	Token token.Token // the token.LINENO token
+}
+
+func (lns *LineNoStatement) statementNode()       {}
+func (lns *LineNoStatement) TokenLiteral() string { return lns.Token.Literal }
+func (lns *LineNoStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(lns.Token.Literal + ":")
+
+	return out.String()
+}
+
+type LabelStatement struct {
+	Token token.Token // the '*' token
+	Name  *Identifier
+}
+
+func (ls *LabelStatement) statementNode()       {}
+func (ls *LabelStatement) TokenLiteral() string { return ls.Token.Literal }
+func (ls *LabelStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ls.Name.String() + ":")
+
+	return out.String()
+}
+
+type DimStatement struct {
+	Token  token.Token // the token.DIM token
+	Names  []*Identifier
+	Values [][]*IntegerLiteral
+}
+
+func (ds *DimStatement) statementNode()       {}
+func (ds *DimStatement) TokenLiteral() string { return ds.Token.Literal }
+func (ds *DimStatement) String() string {
+	var out bytes.Buffer
+
+	l := len(ds.Names)
+
+	if l > 0 {
+		out.WriteString("int ")
+		out.WriteString(ds.Names[0].String())
+		ll := len(ds.Values[0])
+		for j := 0; j < ll; j++ { // TODO: x,y が逆かも
+			out.WriteString("[")
+			out.WriteString(ds.Values[0][j].String())
+			out.WriteString("]")
+		}
+	}
+
+	for i := 1; i < l; i++ {
+		out.WriteString(", ")
+		out.WriteString(ds.Names[i].String())
+		ll := len(ds.Values[i])
+		for j := 0; j < ll; j++ { // TODO: x,y が逆かも
+			out.WriteString("[")
+			out.WriteString(ds.Values[i][j].String())
+			out.WriteString("]")
+		}
+	}
+
+	out.WriteString(";")
+	/*
+		params := []string{}
+		for _, p := range fl.Parameters {
+			params = append(params, p.String())
+		}
+
+		out.WriteString(fl.TokenLiteral())
+		out.WriteString("(")
+		out.WriteString(strings.Join(params, ", "))
+		out.WriteString(") ")
+		out.WriteString(fl.Body.String())*/
+
+	return out.String()
+}
+
 type LetStatement struct {
 	Token token.Token // the token.LET token
 	Name  *Identifier

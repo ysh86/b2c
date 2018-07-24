@@ -22,8 +22,6 @@ func (l *Lexer) NextToken() token.Token {
 	isNewLine = (isNewLine || l.position == 0)
 
 	switch l.ch {
-	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
 	case '+':
 		tok = newToken(token.PLUS, l.ch)
 	case '-':
@@ -32,6 +30,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.ASTERISK, l.ch)
 	case '/':
 		tok = newToken(token.SLASH, l.ch)
+	case '=':
+		tok = newToken(token.EQ, l.ch)
 	case '<':
 		if l.peekChar() == '>' {
 			ch := l.ch

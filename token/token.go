@@ -13,7 +13,6 @@ const (
 	LINENO  = "LINENO"  // line number
 
 	// Operators
-	ASSIGN   = "="
 	PLUS     = "+"
 	MINUS    = "-"
 	ASTERISK = "*"
@@ -21,6 +20,7 @@ const (
 
 	LT     = "<"
 	GT     = ">"
+	EQ     = "="
 	NOT_EQ = "<>"
 
 	// Delimiters

@@ -16,6 +16,40 @@ import (
 1100 DIM A()
 1200 DIM A(1.2)
 1300 DIM A(1, 2.3)
+
+
+1 GOTO 10.10: ' error
+2 GOSUB 10.10: ' error
+
+10 *L
+20 *LL:
+30 GOTO L:' error
+40 GOTO *L:GOTO *LL
+50 GOTO 10: GOTO 30:
+
+110 *L
+120 *LL:
+130 GOSUB L:' error
+140 GOSUB *L:GOSUB *LL
+150 GOSUB 110: GOSUB 130:
+
+200 RETURN
+210 RETURN:RETURN : RETURN:
+
+300 *FUNC: 'do something: RETURN
+310 GOSUB *FUNC
+
+1000 DATA 0
+1100 DATA hoge:
+1200 DATA "0123456789"
+1300 DATA 0:REM data:
+1400 REM data:DATA 1:' error
+
+9000 DATA 0
+9100 DATA hoge
+9200 DATA "foo"
+9300 DATA 0,hoge,"hoge",0.5,foo0
+9999 END
 */
 
 func TestLetStatements(t *testing.T) {

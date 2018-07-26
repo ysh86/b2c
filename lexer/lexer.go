@@ -131,8 +131,8 @@ func (l *Lexer) readData() string {
 	for isSpace(l.ch) {
 		l.readChar()
 	}
-	position := l.position
-	for l.ch != ':' && !isCRLF(l.ch) && l.ch != 0 {
+	position := l.position // TODO: 数値か文字列("" は省略可)
+	for l.ch != ':' && !isCRLF(l.ch) && l.ch != 0 { // TODO: , でつなげられる
 		l.readChar()
 	}
 	return l.input[position:l.position]

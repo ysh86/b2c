@@ -50,6 +50,8 @@ func (p *Program) String() string {
 // Statements
 type LineNoStatement struct {
 	Token token.Token // the token.LINENO token
+	Name  *Identifier // copy from Token.Literal
+	Data  *DataStatement
 }
 
 func (lns *LineNoStatement) statementNode()       {}
@@ -57,7 +59,11 @@ func (lns *LineNoStatement) TokenLiteral() string { return lns.Token.Literal }
 func (lns *LineNoStatement) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(lns.Token.Literal + ":")
+	if lns.Data == nil {
+		out.WriteString("_" + lns.Name.String() + ":;")
+	} else {
+		out.WriteString(lns.Data.String())
+	}
 
 	return out.String()
 }
@@ -72,7 +78,9 @@ func (ls *LabelStatement) TokenLiteral() string { return ls.Token.Literal }
 func (ls *LabelStatement) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(ls.Name.String() + ":")
+	out.WriteString("\n")
+	out.WriteString("// -----------------------------------\n")
+	out.WriteString(ls.Name.String() + ":;")
 
 	return out.String()
 }
@@ -91,7 +99,7 @@ func (ds *DimStatement) String() string {
 	l := len(ds.Names)
 
 	if l > 0 {
-		out.WriteString("int ")
+		out.WriteString("int ") // TODO: char がいる
 		out.WriteString(ds.Names[0].String())
 		ll := len(ds.Values[0])
 		for j := 0; j < ll; j++ { // TODO: x,y が逆かも
@@ -128,6 +136,92 @@ func (ds *DimStatement) String() string {
 	return out.String()
 }
 
+type GotoStatement struct {
+	Token token.Token // the token.GOTO token
+	Name  *Identifier
+}
+
+func (gs *GotoStatement) statementNode()       {}
+func (gs *GotoStatement) TokenLiteral() string { return gs.Token.Literal }
+func (gs *GotoStatement) String() string {
+	var out bytes.Buffer
+
+	var c byte
+	if len(gs.Name.String()) > 0 {
+		c = gs.Name.String()[0]
+	}
+
+	out.WriteString("goto ") // TODO: 飛び先に RETURN があると死ぬ
+	if '0' <= c && c <= '9' {
+		out.WriteString("_")
+	}
+	out.WriteString(gs.Name.String())
+	out.WriteString(";")
+
+	return out.String()
+}
+
+type GosubStatement struct {
+	Token token.Token // the token.GOSUB token
+	Name  *Identifier
+}
+
+func (gss *GosubStatement) statementNode()       {}
+func (gss *GosubStatement) TokenLiteral() string { return gss.Token.Literal }
+func (gss *GosubStatement) String() string {
+	var out bytes.Buffer
+
+	var c byte
+	if len(gss.Name.String()) > 0 {
+		c = gss.Name.String()[0]
+	}
+
+	out.WriteString("if (setjmp(env) == 0) {\n")
+	out.WriteString("    goto ")
+	if '0' <= c && c <= '9' {
+		out.WriteString("_")
+	}
+	out.WriteString(gss.Name.String())
+	out.WriteString(";\n")
+	out.WriteString("} else {\n")
+	out.WriteString("    // return from longjmp()\n")
+	out.WriteString("}")
+
+	return out.String()
+}
+
+type ReturnStatement struct {
+	Token token.Token // the 'return' token
+}
+
+func (rs *ReturnStatement) statementNode()       {}
+func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("longjmp(env, 1);\n")
+	out.WriteString("// -----------------------------------")
+
+	return out.String()
+}
+
+type DataStatement struct {
+	Token token.Token // the token.DATA token
+	Name  *Identifier
+	Value string
+}
+
+func (das *DataStatement) statementNode()       {}
+func (das *DataStatement) TokenLiteral() string { return das.Token.Literal }
+func (das *DataStatement) String() string {
+	var out bytes.Buffer
+
+	// TODO: すでに "0123456789" の時がある
+	out.WriteString("char *_" + das.Name.String() + " = \"" + das.Value + "\";")
+
+	return out.String()
+}
+
 type LetStatement struct {
 	Token token.Token // the token.LET token
 	Name  *Identifier
@@ -139,33 +233,11 @@ func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
 func (ls *LetStatement) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(ls.TokenLiteral() + " ")
 	out.WriteString(ls.Name.String())
 	out.WriteString(" = ")
 
 	if ls.Value != nil {
 		out.WriteString(ls.Value.String())
-	}
-
-	out.WriteString(";")
-
-	return out.String()
-}
-
-type ReturnStatement struct {
-	Token       token.Token // the 'return' token
-	ReturnValue Expression
-}
-
-func (rs *ReturnStatement) statementNode()       {}
-func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
-func (rs *ReturnStatement) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(rs.TokenLiteral() + " ")
-
-	if rs.ReturnValue != nil {
-		out.WriteString(rs.ReturnValue.String())
 	}
 
 	out.WriteString(";")

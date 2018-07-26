@@ -31,6 +31,8 @@ const (
 	LPAREN = "("
 	RPAREN = ")"
 
+	// Special keywords
+	LET      = "LET"
 	// Keywords
 	DIM      = "DIM"
 	IF       = "IF"

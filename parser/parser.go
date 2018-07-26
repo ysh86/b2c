@@ -156,25 +156,57 @@ func (p *Parser) parseStatement() ast.Statement {
 			return s
 		}
 		return nil
-		/*
-			case token.GOTO:
-				return p.parseReturnStatement()
-			case token.GOSUB:
-				return p.parseReturnStatement()
-			case token.RETURN:
-				return p.parseReturnStatement()
-			case token.DATA:
-		*/
-	default:
-		if p.peekToken.Type == token.EQ {
-			return p.parseLetStatement()
+	case token.GOTO:
+		if s := p.parseGotoStatement(); s != nil {
+			return s
 		}
-		return p.parseExpressionStatement()
+		return nil
+	case token.GOSUB:
+		if s := p.parseGosubStatement(); s != nil {
+			return s
+		}
+		return nil
+	case token.RETURN:
+		if s := p.parseReturnStatement(); s != nil {
+			return s
+		}
+		return nil
+	default:
+		if p.curToken.Type == token.IDENT && p.peekToken.Type == token.EQ {
+			if s := p.parseLetStatement(); s != nil {
+				return s
+			}
+			return nil
+		}
+		// TODO: IF, ON(1-origin の switch 文), FOR-NEXT
+		if s := p.parseExpressionStatement(); s != nil {
+			return s
+		}
+		return nil
 	}
 }
 
 func (p *Parser) parseLineNoStatement() *ast.LineNoStatement {
 	stmt := &ast.LineNoStatement{Token: p.curToken}
+
+	l := p.curToken.Literal
+	t := token.Token{Type: token.IDENT, Literal: l}
+	stmt.Name = &ast.Identifier{Token: t, Value: l}
+
+	if p.peekTokenIs(token.DATA) {
+		p.nextToken()
+
+		if s := p.parseDataStatement(); s != nil {
+			s.Name = &ast.Identifier{Token: t, Value: l}
+			stmt.Data = s
+		} else {
+			return nil
+		}
+
+		if p.peekTokenIs(token.COLON) {
+			p.nextToken()
+		}
+	}
 
 	return stmt
 }
@@ -279,12 +311,79 @@ func (p *Parser) parseDimParameters() []*ast.IntegerLiteral {
 	return integers
 }
 
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	stmt := &ast.LetStatement{Token: p.curToken}
+func (p *Parser) parseGotoStatement() *ast.GotoStatement {
+	stmt := &ast.GotoStatement{Token: p.curToken}
 
-	if !p.expectPeek(token.IDENT) {
+	if p.peekTokenIs(token.NUM) {
+		p.nextToken()
+
+		t := token.Token{Type: token.IDENT, Literal: p.curToken.Literal}
+		stmt.Name = &ast.Identifier{Token: t, Value: p.curToken.Literal}
+	} else if p.peekTokenIs(token.ASTERISK) {
+		p.nextToken()
+
+		if !p.expectPeek(token.IDENT) {
+			return nil
+		}
+
+		stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	} else {
 		return nil
 	}
+
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseGosubStatement() *ast.GosubStatement {
+	stmt := &ast.GosubStatement{Token: p.curToken}
+
+	if p.peekTokenIs(token.NUM) {
+		p.nextToken()
+
+		t := token.Token{Type: token.IDENT, Literal: p.curToken.Literal}
+		stmt.Name = &ast.Identifier{Token: t, Value: p.curToken.Literal}
+	} else if p.peekTokenIs(token.ASTERISK) {
+		p.nextToken()
+
+		if !p.expectPeek(token.IDENT) {
+			return nil
+		}
+
+		stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	} else {
+		return nil
+	}
+
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	stmt := &ast.ReturnStatement{Token: p.curToken}
+
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseDataStatement() *ast.DataStatement {
+	stmt := &ast.DataStatement{Token: p.curToken, Value: p.curToken.Literal}
+
+	return stmt
+}
+
+func (p *Parser) parseLetStatement() *ast.LetStatement {
+	t := token.Token{Type: token.LET, Literal: token.LET}
+	stmt := &ast.LetStatement{Token: t}
 
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
@@ -296,21 +395,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 
 	stmt.Value = p.parseExpression(LOWEST)
 
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-
-	return stmt
-}
-
-func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	stmt := &ast.ReturnStatement{Token: p.curToken}
-
-	p.nextToken()
-
-	stmt.ReturnValue = p.parseExpression(LOWEST)
-
-	if p.peekTokenIs(token.SEMICOLON) {
+	if p.peekTokenIs(token.COLON) {
 		p.nextToken()
 	}
 

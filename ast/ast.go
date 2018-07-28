@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"monkey/token"
+	"strconv"
 	"strings"
 )
 
@@ -136,6 +137,61 @@ func (ds *DimStatement) String() string {
 	return out.String()
 }
 
+type OnStatement struct {
+	Token       token.Token // the token.ON token
+	Value       Expression
+	Instruction token.Token // 'GOTO' or 'GUSUB'
+	Names       []*Identifier
+}
+
+func (os *OnStatement) statementNode()       {}
+func (os *OnStatement) TokenLiteral() string { return os.Token.Literal }
+func (os *OnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("switch (")
+	out.WriteString(os.Value.String())
+	out.WriteString(") {\n")
+
+	for i, n := range os.Names {
+		out.WriteString("case ")
+		out.WriteString(strconv.Itoa(i + 1)) // 1 origin
+		out.WriteString(":\n")
+
+		var c byte
+		if len(n.String()) > 0 {
+			c = n.String()[0]
+		}
+
+		if os.Instruction.Type == token.GOTO {
+			out.WriteString("    goto ")
+			if '0' <= c && c <= '9' {
+				out.WriteString("_")
+			}
+			out.WriteString(n.String())
+			out.WriteString(";\n")
+		} else {
+			out.WriteString("    if (setjmp(env) == 0) {\n")
+			out.WriteString("        goto ")
+			if '0' <= c && c <= '9' {
+				out.WriteString("_")
+			}
+			out.WriteString(n.String())
+			out.WriteString(";\n")
+			out.WriteString("    }\n")
+			out.WriteString("    // return from longjmp()\n")
+		}
+		out.WriteString("    break;\n")
+	}
+
+	out.WriteString("default:\n")
+	out.WriteString("    // nothing to do\n")
+	out.WriteString("    break;\n")
+	out.WriteString("}")
+
+	return out.String()
+}
+
 type GotoStatement struct {
 	Token token.Token // the token.GOTO token
 	Name  *Identifier
@@ -183,9 +239,8 @@ func (gss *GosubStatement) String() string {
 	}
 	out.WriteString(gss.Name.String())
 	out.WriteString(";\n")
-	out.WriteString("} else {\n")
-	out.WriteString("    // return from longjmp()\n")
-	out.WriteString("}")
+	out.WriteString("}\n")
+	out.WriteString("// return from longjmp()")
 
 	return out.String()
 }

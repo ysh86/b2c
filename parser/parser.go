@@ -156,6 +156,7 @@ func (p *Parser) parseStatement() ast.Statement {
 			return s
 		}
 		return nil
+	// TODO: IF
 	case token.ON:
 		if s := p.parseOnStatement(); s != nil {
 			return s
@@ -176,6 +177,11 @@ func (p *Parser) parseStatement() ast.Statement {
 			return s
 		}
 		return nil
+	case token.FOR:
+		if s := p.parseForStatement(); s != nil {
+			return s
+		}
+		return nil
 	default:
 		if p.curToken.Type == token.IDENT && p.peekToken.Type == token.EQ {
 			if s := p.parseLetStatement(); s != nil {
@@ -183,7 +189,6 @@ func (p *Parser) parseStatement() ast.Statement {
 			}
 			return nil
 		}
-		// TODO: IF, FOR-NEXT
 		if s := p.parseExpressionStatement(); s != nil {
 			return s
 		}
@@ -321,7 +326,7 @@ func (p *Parser) parseOnStatement() *ast.OnStatement {
 
 	p.nextToken()
 
-	stmt.Value = p.parseExpression(LOWEST)
+	stmt.Value = p.parseExpression(LOWEST) // TODO: 整数限定
 
 	if p.peekTokenIs(token.GOTO) {
 		if !p.expectPeek(token.GOTO) {
@@ -409,6 +414,7 @@ func (p *Parser) parseGotoIdentifier() *ast.Identifier {
 	if p.peekTokenIs(token.NUM) {
 		p.nextToken()
 
+		// TODO: 整数限定
 		t := token.Token{Type: token.IDENT, Literal: p.curToken.Literal}
 		return &ast.Identifier{Token: t, Value: p.curToken.Literal}
 	} else if p.peekTokenIs(token.ASTERISK) {
@@ -427,6 +433,77 @@ func (p *Parser) parseGotoIdentifier() *ast.Identifier {
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.curToken}
+
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseForStatement() *ast.ForStatement {
+	stmt := &ast.ForStatement{Token: p.curToken}
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if !p.expectPeek(token.EQ) {
+		return nil
+	}
+
+	p.nextToken()
+
+	b := p.parseExpression(LOWEST)
+	if b == nil {
+		return nil
+	}
+
+	stmt.Begin = b
+
+	if !p.expectPeek(token.TO) {
+		return nil
+	}
+
+	p.nextToken()
+
+	e := p.parseExpression(LOWEST)
+	if e == nil {
+		return nil
+	}
+
+	stmt.End = e
+
+	if p.peekTokenIs(token.STEP) {
+		p.nextToken()
+		p.nextToken()
+
+		s := p.parseExpression(LOWEST)
+		if s == nil {
+			return nil
+		}
+
+		stmt.Step = s
+	} else {
+		t := token.Token{Type: token.NUM, Literal: "1"}
+		stmt.Step = &ast.IntegerLiteral{Token: t, Value: int64(1)}
+	}
+
+	if !p.peekTokenIs(token.COLON) && !p.peekTokenIs(token.LINENO) {
+		return nil
+	} else if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	p.nextToken()
+
+	stmt.Statements = p.parseStatements(token.NEXT)
+
+	if !p.curTokenIs(token.NEXT) {
+		return nil
+	}
 
 	if p.peekTokenIs(token.COLON) {
 		p.nextToken()
@@ -460,6 +537,20 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseStatements(stopToken token.TokenType) []ast.Statement {
+	statements := []ast.Statement{}
+
+	for !p.curTokenIs(stopToken) && !p.curTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			statements = append(statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return statements
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
@@ -601,25 +692,6 @@ func (p *Parser) parseIfExpression() ast.Expression { /*
 		}
 
 		return expression
-	*/
-	return nil
-}
-
-func (p *Parser) parseBlockStatement() *ast.BlockStatement { /*
-		block := &ast.BlockStatement{Token: p.curToken}
-		block.Statements = []ast.Statement{}
-
-		p.nextToken()
-
-		for !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
-			stmt := p.parseStatement()
-			if stmt != nil {
-				block.Statements = append(block.Statements, stmt)
-			}
-			p.nextToken()
-		}
-
-		return block
 	*/
 	return nil
 }

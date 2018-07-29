@@ -260,6 +260,44 @@ func (rs *ReturnStatement) String() string {
 	return out.String()
 }
 
+type ForStatement struct {
+	Token      token.Token // the token.FOR token
+	Name       *Identifier
+	Begin      Expression
+	End        Expression
+	Step       Expression
+	Statements []Statement
+}
+
+func (fs *ForStatement) statementNode()       {}
+func (fs *ForStatement) TokenLiteral() string { return fs.Token.Literal }
+func (fs *ForStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("for (")
+	out.WriteString("int ") // TODO: float
+	out.WriteString(fs.Name.String())
+	out.WriteString(" = ")
+	out.WriteString(fs.Begin.String())
+	out.WriteString("; ")
+	out.WriteString(fs.Name.String())
+	out.WriteString(" != ")
+	out.WriteString(fs.End.String())
+	out.WriteString("; ")
+	out.WriteString(fs.Name.String())
+	out.WriteString(" += ")
+	out.WriteString(fs.Step.String())
+	out.WriteString(") {\n")
+	for _, s := range fs.Statements {
+		out.WriteString("    ")
+		out.WriteString(s.String())
+		out.WriteString("\n")
+	}
+	out.WriteString("}")
+
+	return out.String()
+}
+
 type DataStatement struct {
 	Token token.Token // the token.DATA token
 	Name  *Identifier

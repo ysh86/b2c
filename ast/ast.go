@@ -137,6 +137,39 @@ func (ds *DimStatement) String() string {
 	return out.String()
 }
 
+type IfStatement struct {
+	Token       token.Token // The 'if' token
+	Condition   Expression
+	Consequence []Statement
+	Alternative []Statement
+}
+
+func (is *IfStatement) statementNode()       {}
+func (is *IfStatement) TokenLiteral() string { return is.Token.Literal }
+func (is *IfStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("if (")
+	out.WriteString(is.Condition.String())
+	out.WriteString(") {\n")
+	for _, s := range is.Consequence {
+		out.WriteString("    ")
+		out.WriteString(s.String())
+		out.WriteString("\n")
+	}
+	if len(is.Alternative) != 0 {
+		out.WriteString("} else {\n")
+		for _, s := range is.Alternative {
+			out.WriteString("    ")
+			out.WriteString(s.String())
+			out.WriteString("\n")
+		}
+	}
+	out.WriteString("}")
+
+	return out.String()
+}
+
 type OnStatement struct {
 	Token       token.Token // the token.ON token
 	Value       Expression
@@ -352,23 +385,6 @@ func (es *ExpressionStatement) String() string {
 	return ""
 }
 
-type BlockStatement struct {
-	Token      token.Token // the { token
-	Statements []Statement
-}
-
-func (bs *BlockStatement) statementNode()       {}
-func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
-func (bs *BlockStatement) String() string {
-	var out bytes.Buffer
-
-	for _, s := range bs.Statements {
-		out.WriteString(s.String())
-	}
-
-	return out.String()
-}
-
 // Expressions
 type Identifier struct {
 	Token token.Token // the token.IDENT token
@@ -433,56 +449,6 @@ func (oe *InfixExpression) String() string {
 	out.WriteString(" " + oe.Operator + " ")
 	out.WriteString(oe.Right.String())
 	out.WriteString(")")
-
-	return out.String()
-}
-
-type IfExpression struct {
-	Token       token.Token // The 'if' token
-	Condition   Expression
-	Consequence *BlockStatement
-	Alternative *BlockStatement
-}
-
-func (ie *IfExpression) expressionNode()      {}
-func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
-func (ie *IfExpression) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("if")
-	out.WriteString(ie.Condition.String())
-	out.WriteString(" ")
-	out.WriteString(ie.Consequence.String())
-
-	if ie.Alternative != nil {
-		out.WriteString("else ")
-		out.WriteString(ie.Alternative.String())
-	}
-
-	return out.String()
-}
-
-type FunctionLiteral struct {
-	Token      token.Token // The 'fn' token
-	Parameters []*Identifier
-	Body       *BlockStatement
-}
-
-func (fl *FunctionLiteral) expressionNode()      {}
-func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
-func (fl *FunctionLiteral) String() string {
-	var out bytes.Buffer
-
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
-	}
-
-	out.WriteString(fl.TokenLiteral())
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
-	out.WriteString(fl.Body.String())
 
 	return out.String()
 }

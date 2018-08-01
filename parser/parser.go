@@ -188,8 +188,13 @@ func (p *Parser) parseStatement() ast.Statement {
 		return nil
 	default:
 		if p.curToken.Type == token.IDENT && p.peekToken.Type == token.EQ {
-			// TODO: let array[ statement
 			if s := p.parseLetStatement(); s != nil {
+				return s
+			}
+			return nil
+		}
+		if p.curToken.Type == token.IDENT && p.peekToken.Type == token.LPAREN {
+			if s := p.parseLetArrayStatement(); s != nil {
 				return s
 			}
 			return nil
@@ -609,6 +614,74 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseLetArrayStatement() *ast.LetArrayStatement {
+	t := token.Token{Type: token.LET, Literal: token.LET}
+	stmt := &ast.LetArrayStatement{Token: t}
+
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	indices := p.parseIndices()
+	if indices == nil {
+		return nil
+	}
+
+	stmt.Indices = indices
+
+	if !p.expectPeek(token.EQ) {
+		return nil
+	}
+
+	p.nextToken()
+
+	value := p.parseExpression(LOWEST)
+	if value == nil {
+		return nil
+	}
+
+	stmt.Value = value
+
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseIndices() []ast.Expression {
+	indices := []ast.Expression{}
+
+	p.nextToken()
+
+	i := p.parseExpression(LOWEST)
+	if i == nil {
+		return nil
+	}
+
+	indices = append(indices, i)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+
+		i := p.parseExpression(LOWEST)
+		if i == nil {
+			return nil
+		}
+
+		indices = append(indices, i)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return indices
 }
 
 func (p *Parser) parseStatements(stopToken token.TokenType, stopByLine bool) []ast.Statement {

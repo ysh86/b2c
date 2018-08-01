@@ -122,17 +122,6 @@ func (ds *DimStatement) String() string {
 	}
 
 	out.WriteString(";")
-	/*
-		params := []string{}
-		for _, p := range fl.Parameters {
-			params = append(params, p.String())
-		}
-
-		out.WriteString(fl.TokenLiteral())
-		out.WriteString("(")
-		out.WriteString(strings.Join(params, ", "))
-		out.WriteString(") ")
-		out.WriteString(fl.Body.String())*/
 
 	return out.String()
 }
@@ -364,6 +353,36 @@ func (ls *LetStatement) String() string {
 
 	if ls.Value != nil {
 		out.WriteString(ls.Value.String())
+	}
+
+	out.WriteString(";")
+
+	return out.String()
+}
+
+type LetArrayStatement struct {
+	Token   token.Token // the token.LET token
+	Name    *Identifier
+	Indices []Expression
+	Value   Expression
+}
+
+func (las *LetArrayStatement) statementNode()       {}
+func (las *LetArrayStatement) TokenLiteral() string { return las.Token.Literal }
+func (las *LetArrayStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(las.Name.String())
+	l := len(las.Indices)
+	for i := 0; i < l; i++ { // TODO: x,y が逆かも
+		out.WriteString("[")
+		out.WriteString(las.Indices[i].String())
+		out.WriteString("]")
+	}
+	out.WriteString(" = ")
+
+	if las.Value != nil {
+		out.WriteString(las.Value.String())
 	}
 
 	out.WriteString(";")

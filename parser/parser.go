@@ -45,6 +45,8 @@ type Parser struct {
 
 	prefixParseFns map[token.TokenType]prefixParseFn
 	infixParseFns  map[token.TokenType]infixParseFn
+
+	dimVars map[string]*token.Token
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -72,6 +74,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GT, p.parseInfixExpression)
 
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+
+	p.dimVars = make(map[string]*token.Token)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
@@ -186,23 +190,22 @@ func (p *Parser) parseStatement() ast.Statement {
 			return s
 		}
 		return nil
-	default:
-		if p.curToken.Type == token.IDENT && p.peekToken.Type == token.EQ {
+	case token.IDENT:
+		if p.peekToken.Type == token.EQ {
 			if s := p.parseLetStatement(); s != nil {
 				return s
 			}
-			return nil
-		}
-		if p.curToken.Type == token.IDENT && p.peekToken.Type == token.LPAREN {
+		} else if _, ok := p.dimVars[p.curToken.Literal]; ok {
 			if s := p.parseLetArrayStatement(); s != nil {
 				return s
 			}
-			return nil
+		} else {
+			if s := p.parseCallStatement(); s != nil {
+				return s
+			}
 		}
-		// TODO: call func statement
-		if s := p.parseExpressionStatement(); s != nil {
-			return s
-		}
+		return nil
+	default:
 		return nil
 	}
 }
@@ -268,6 +271,7 @@ func (p *Parser) parseDimStatement() *ast.DimStatement {
 
 	stmt.Names = append(stmt.Names, ident)
 	stmt.Values = append(stmt.Values, params)
+	p.dimVars[ident.Value] = &ident.Token
 
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
@@ -289,6 +293,7 @@ func (p *Parser) parseDimStatement() *ast.DimStatement {
 
 		stmt.Names = append(stmt.Names, ident)
 		stmt.Values = append(stmt.Values, params)
+		p.dimVars[ident.Value] = &ident.Token
 	}
 
 	if p.peekTokenIs(token.COLON) {
@@ -700,6 +705,63 @@ func (p *Parser) parseStatements(stopToken token.TokenType, stopByLine bool) []a
 	return statements
 }
 
+func (p *Parser) parseCallStatement() *ast.CallStatement {
+	t := token.Token{Type: token.CALL, Literal: token.CALL}
+	stmt := &ast.CallStatement{Token: t}
+
+	i := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	exp := &ast.CallExpression{Token: t, Function: i}
+
+	args := p.parseCallArguments()
+	if args == nil {
+		return nil
+	}
+	exp.Arguments = args
+
+	stmt.Expression = exp
+
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	requireR := false
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken()
+		requireR = true
+	}
+
+	if p.peekTokenIs(token.COLON) || p.peekTokenIs(token.LINENO) || p.peekTokenIs(token.EOF) {
+		if requireR {
+			p.expectPeek(token.RPAREN) // just record an error
+			return nil
+		}
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if requireR {
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+	}
+
+	return args
+}
+
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
@@ -809,33 +871,9 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 }
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
-	exp := &ast.CallExpression{Token: p.curToken, Function: function}
+	exp := &ast.CallExpression{Token: p.curToken /*, Function: function*/}
 	exp.Arguments = p.parseCallArguments()
 	return exp
-}
-
-func (p *Parser) parseCallArguments() []ast.Expression {
-	args := []ast.Expression{}
-
-	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
-	}
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-
-	return args
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {

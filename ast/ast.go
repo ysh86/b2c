@@ -390,6 +390,24 @@ func (las *LetArrayStatement) String() string {
 	return out.String()
 }
 
+type CallStatement struct {
+	Token      token.Token // the token.CALL token
+	Expression *CallExpression
+}
+
+func (cs *CallStatement) statementNode()       {}
+func (cs *CallStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CallStatement) String() string {
+	var out bytes.Buffer
+
+	if cs.Expression != nil {
+		out.WriteString(cs.Expression.String())
+		out.WriteString(";")
+	}
+
+	return out.String()
+}
+
 type ExpressionStatement struct {
 	Token      token.Token // the first token of the expression
 	Expression Expression
@@ -412,7 +430,9 @@ type Identifier struct {
 
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
-func (i *Identifier) String() string       { return i.Value }
+func (i *Identifier) String() string {
+	return i.Value // TODO: $ を置換しないと
+}
 
 type Boolean struct {
 	Token token.Token
@@ -473,8 +493,8 @@ func (oe *InfixExpression) String() string {
 }
 
 type CallExpression struct {
-	Token     token.Token // The '(' token
-	Function  Expression  // Identifier or FunctionLiteral
+	Token     token.Token // The token.CALL token
+	Function  *Identifier
 	Arguments []Expression
 }
 

@@ -7,10 +7,10 @@ const (
 	EOF     = "EOF"
 
 	// Identifiers + literals
-	STRING  = "STRING"  // "foo"
-	IDENT   = "IDENT"   // add, foobar, x, y, ...
-	NUM     = "NUM"     // 1343456 or 0.987
-	LINENO  = "LINENO"  // line number
+	STRING = "STRING" // "foo"
+	IDENT  = "IDENT"  // add, foobar, x, y, ...
+	NUM    = "NUM"    // 1343456 or 0.987
+	LINENO = "LINENO" // line number
 
 	// Operators
 	PLUS     = "+"
@@ -25,31 +25,32 @@ const (
 
 	// Delimiters
 	SEMICOLON = ";"
-	COMMA = ","
-	COLON = ":"
+	COMMA     = ","
+	COLON     = ":"
 
 	LPAREN = "("
 	RPAREN = ")"
 
 	// Special keywords
-	LET      = "LET"
+	LET  = "LET"
+	CALL = "CALL"
 	// Keywords
-	DIM      = "DIM"
-	IF       = "IF"
-	THEN     = "THEN"
-	ELSE     = "ELSE"
-	ON       = "ON"
-	GOTO     = "GOTO"
-	GOSUB    = "GOSUB"
-	RETURN   = "RETURN"
-	FOR      = "FOR"
-	TO       = "TO"
-	STEP     = "STEP"
-	NEXT     = "NEXT"
-	DATA     = "DATA"
-	REM      = "REM"
-	AND      = "AND"
-	OR       = "OR"
+	DIM    = "DIM"
+	IF     = "IF"
+	THEN   = "THEN"
+	ELSE   = "ELSE"
+	ON     = "ON"
+	GOTO   = "GOTO"
+	GOSUB  = "GOSUB"
+	RETURN = "RETURN"
+	FOR    = "FOR"
+	TO     = "TO"
+	STEP   = "STEP"
+	NEXT   = "NEXT"
+	DATA   = "DATA"
+	REM    = "REM"
+	AND    = "AND"
+	OR     = "OR"
 )
 
 type Token struct {

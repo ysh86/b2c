@@ -408,20 +408,6 @@ func (cs *CallStatement) String() string {
 	return out.String()
 }
 
-type ExpressionStatement struct {
-	Token      token.Token // the first token of the expression
-	Expression Expression
-}
-
-func (es *ExpressionStatement) statementNode()       {}
-func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
-func (es *ExpressionStatement) String() string {
-	if es.Expression != nil {
-		return es.Expression.String()
-	}
-	return ""
-}
-
 // Expressions
 type Identifier struct {
 	Token token.Token // the token.IDENT token
@@ -434,15 +420,6 @@ func (i *Identifier) String() string {
 	return i.Value // TODO: $ を置換しないと
 }
 
-type Boolean struct {
-	Token token.Token
-	Value bool
-}
-
-func (b *Boolean) expressionNode()      {}
-func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
-func (b *Boolean) String() string       { return b.Token.Literal }
-
 type IntegerLiteral struct {
 	Token token.Token
 	Value int64
@@ -453,7 +430,7 @@ func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
 
 type PrefixExpression struct {
-	Token    token.Token // The prefix token, e.g. !
+	Token    token.Token // The prefix token, e.g. -
 	Operator string
 	Right    Expression
 }
@@ -483,9 +460,23 @@ func (oe *InfixExpression) TokenLiteral() string { return oe.Token.Literal }
 func (oe *InfixExpression) String() string {
 	var out bytes.Buffer
 
+	var op string
+	switch oe.Operator {
+	case token.OR:
+		op = "||"
+	case token.AND:
+		op = "&&"
+	case token.EQ:
+		op = "=="
+	case token.NOT_EQ:
+		op = "!="
+	default:
+		op = oe.Operator
+	}
+
 	out.WriteString("(")
 	out.WriteString(oe.Left.String())
-	out.WriteString(" " + oe.Operator + " ")
+	out.WriteString(" " + op + " ")
 	out.WriteString(oe.Right.String())
 	out.WriteString(")")
 

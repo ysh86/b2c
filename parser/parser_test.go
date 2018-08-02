@@ -8,6 +8,21 @@ import (
 )
 
 /*
+1 ' expressions
+2 A=A
+3 A=A=B=C=D
+4 A=A=B OR C<>D AND E
+5 A=A>B<C+D*7
+6 A=(A>B OR B < A)AND(B<A)AND 1
+7 A=A>B OR B < A AND(B<A)AND 1
+8 A=-1+2*3-4/5=3*-2
+9 A=1:B=2+3:C=A>B
+
+10 ' expressions & func calls
+11 A=B(0):C=D(0,1,2,3,4+5,E(1,2,3))
+12 123(0,1,2): ' ignored
+13 A=123(0,1,2): ' error
+
 500 REM rem1 :' rem2
 550 *GOGO:REM rem3
 600
@@ -19,7 +34,7 @@ import (
 
 1 IF A>1 THEN B=1:C=2:D=3
 2 D=4:C=3
-3 IF A + 2 THEN B=1:C$=2:ELSE D=2:E(A+1,B=2,3,X(4,5+A))=4:
+3 IF A + 2 THEN B=1:C$=2:ELSE D=2:E(A+1,B=2,3,X(4,5+A))=4: ' ignored =4
 4 E=10
 5 IF A>1 THEN *GOGO ELSE 2
 6 IF A>1 THEN 1 ELSE *GOGO
@@ -68,8 +83,8 @@ import (
 1300 DATA 0:REM data:
 1400 REM data:DATA 1:' error
 
-10 A+B
-20 A-B
+10 A+B:' error
+20 A-B:' func call!
 2000 FREE(0)
 2030 FREE
 2040 FREE:
@@ -78,12 +93,12 @@ import (
 2070 FREE(0:' error
 2100 FREE 0
 2200 FREE 0:
-2300 FREE 0,1,2,3,4,DELETE 1,2
+2300 FREE 0,1,2,3,4,DELETE 1,2:' ignored 1,2
 2400 FREE 0,1,2,3,4,DELETE(1,2)
 2450 FREE(0,1,2,3,4,DELETE(1,2))
 2500 FREE 0,1,2,3,4,DELETE,N>2,1+B+C,A=AA:A=2
-2600 DIM A(3):FREE A(2),3,4,5
-2700 DIM A(3):A(2)=B+C:FREE A(1):
+2600 DIM A(3):FREE A(2),3,4,5:' A(2) should be A[2], ,3,4,5 is ignored
+2700 DIM A(3):A(2)=B+C:FREE A(1):' A(1) should be A[1]:
 
 9000 DATA 0
 9100 DATA hoge

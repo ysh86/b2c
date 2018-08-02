@@ -23,6 +23,8 @@ import (
 12 123(0,1,2): ' ignored
 13 A=123(0,1,2): ' error
 
+20 DIM C(2):A=C(0)+C(0,1,2)*2
+
 500 REM rem1 :' rem2
 550 *GOGO:REM rem3
 600

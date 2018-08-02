@@ -637,9 +637,9 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	return stmt
 }
 
-func (p *Parser) parseLetArrayStatement() *ast.LetArrayStatement {
+func (p *Parser) parseLetArrayStatement() *ast.LetStatement {
 	t := token.Token{Type: token.LET, Literal: token.LET}
-	stmt := &ast.LetArrayStatement{Token: t}
+	stmt := &ast.LetStatement{Token: t}
 
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
@@ -652,7 +652,7 @@ func (p *Parser) parseLetArrayStatement() *ast.LetArrayStatement {
 		return nil
 	}
 
-	stmt.Indices = indices
+	stmt.Name.Indices = indices
 
 	if !p.expectPeek(token.EQ) {
 		return nil
@@ -818,7 +818,27 @@ func (p *Parser) curPrecedence() int {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	var ident ast.Expression
+
+	if _, ok := p.dimVars[p.curToken.Literal]; ok {
+		name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+		if !p.expectPeek(token.LPAREN) {
+			return nil
+		}
+
+		indices := p.parseIndices()
+		if indices == nil {
+			return nil
+		}
+
+		name.Indices = indices
+		ident = name
+	} else {
+		ident = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	}
+
+	return ident
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {

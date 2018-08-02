@@ -360,36 +360,6 @@ func (ls *LetStatement) String() string {
 	return out.String()
 }
 
-type LetArrayStatement struct {
-	Token   token.Token // the token.LET token
-	Name    *Identifier
-	Indices []Expression
-	Value   Expression
-}
-
-func (las *LetArrayStatement) statementNode()       {}
-func (las *LetArrayStatement) TokenLiteral() string { return las.Token.Literal }
-func (las *LetArrayStatement) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(las.Name.String())
-	l := len(las.Indices)
-	for i := 0; i < l; i++ { // TODO: x,y が逆かも
-		out.WriteString("[")
-		out.WriteString(las.Indices[i].String())
-		out.WriteString("]")
-	}
-	out.WriteString(" = ")
-
-	if las.Value != nil {
-		out.WriteString(las.Value.String())
-	}
-
-	out.WriteString(";")
-
-	return out.String()
-}
-
 type CallStatement struct {
 	Token      token.Token // the token.CALL token
 	Expression *CallExpression
@@ -412,12 +382,23 @@ func (cs *CallStatement) String() string {
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
+	Indices []Expression
 }
 
 func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string {
-	return i.Value // TODO: $ を置換しないと
+	var out bytes.Buffer
+
+	out.WriteString(i.Value) // TODO: $ を置換しないと
+	l := len(i.Indices)
+	for j := 0; j < l; j++ { // TODO: x,y が逆かも
+		out.WriteString("[")
+		out.WriteString(i.Indices[j].String())
+		out.WriteString("]")
+	}
+
+	return out.String()
 }
 
 type IntegerLiteral struct {

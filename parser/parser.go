@@ -218,7 +218,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		}
 		return nil
 	default:
-		// TODO: error message
+		msg := fmt.Sprintf("got invalid token: %s", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
 		return nil
 	}
 }
@@ -726,6 +727,9 @@ func (p *Parser) parseCallStatement() *ast.CallStatement {
 	stmt := &ast.CallStatement{Token: t}
 
 	f := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	p.nextToken()
+
 	exp := p.parseCallExpression(f)
 	if exp == nil {
 		return nil
@@ -738,41 +742,6 @@ func (p *Parser) parseCallStatement() *ast.CallStatement {
 	}
 
 	return stmt
-}
-
-func (p *Parser) parseCallArguments() []ast.Expression {
-	args := []ast.Expression{}
-
-	requireR := false
-	if p.peekTokenIs(token.LPAREN) {
-		p.nextToken()
-		requireR = true
-	}
-
-	if p.peekTokenIs(token.COLON) || p.peekTokenIs(token.LINENO) || p.peekTokenIs(token.EOF) {
-		if requireR {
-			p.expectPeek(token.RPAREN) // just record an error
-			return nil
-		}
-		return args
-	}
-
-	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
-
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
-	}
-
-	if requireR {
-		if !p.expectPeek(token.RPAREN) {
-			return nil
-		}
-	}
-
-	return args
 }
 
 // ------------------------------------------------------------
@@ -834,6 +803,17 @@ func (p *Parser) parseIdentifier() ast.Expression {
 
 		name.Indices = indices
 		ident = name
+	} else if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.NUM) /*|| p.peekTokenIs(token.MINUS)*/ {
+		f := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+		p.nextToken()
+
+		exp := p.parseCallExpression(f)
+		if exp == nil {
+			return nil
+		}
+
+		ident = exp
 	} else {
 		ident = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	}
@@ -913,6 +893,40 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp.Arguments = args
 
 	return exp
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	requireR := false
+	if p.curTokenIs(token.LPAREN) {
+		p.nextToken()
+		requireR = true
+	}
+
+	arg := p.parseExpression(LOWEST)
+	if arg == nil {
+		return nil
+	}
+	args = append(args, arg)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		arg := p.parseExpression(LOWEST)
+		if arg == nil {
+			return nil
+		}
+		args = append(args, arg)
+	}
+
+	if requireR {
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+	}
+
+	return args
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {

@@ -88,6 +88,8 @@ import (
 10 A+B:' error
 20 A-B:' func call!
 2000 FREE(0)
+2020 FREE(A):FREE A:FREE ((A)):
+2025 FREE -1
 2030 FREE
 2040 FREE:
 2045 FREE(:' error
@@ -95,12 +97,37 @@ import (
 2070 FREE(0:' error
 2100 FREE 0
 2200 FREE 0:
-2300 FREE 0,1,2,3,4,DELETE 1,2:' ignored 1,2
+2300 FREE 0,1,2,3,4,DELETE 1,2
+2350 FREE 0,1,2,3,4,DELETE A, 2, 3:
+2360 FREE 0,1,2,3,4,DELETE -A
+2370 FREE 0,1,2,3,4,DELETE -2
+2380 FREE (0+A)*3,1,2,3,4,DELETE -2:' error
+2390 FREE ((0+A)*3,1,2,3,4,DELETE -2)
 2400 FREE 0,1,2,3,4,DELETE(1,2)
 2450 FREE(0,1,2,3,4,DELETE(1,2))
 2500 FREE 0,1,2,3,4,DELETE,N>2,1+B+C,A=AA:A=2
 2600 DIM A(3):FREE A(2),3,4,5:' A(2) should be A[2], ,3,4,5 is ignored
 2700 DIM A(3):A(2)=B+C:FREE A(1):' A(1) should be A[1]:
+2800 A=B(0)+C(0)
+2900 DIM C(2):A=B(0)+C(0)*2--3
+
+3000 DIM C(2):A=B(0)+C(0)*2--3+(A B)+1
+3100 DIM C(2):A=B(0)+C(0)*2--3+A 1
+3110 DIM C(2):A=B(0)+C(0)*2--3+A -1
+3120 DIM C(2):A=B(0)+C(0)*2--3+A-1
+3125 DIM C(2):A=B(0)+C(0)*2--3+A(-1)
+3130 DIM C(2):A=B(0)+C(0)*2--3+A-B
+3150 DIM C(2):A=B(0)+C(0)*2--3+A B-1
+3151 DIM C(2):A=B(0)+C(0)*2--3+A B-D
+3155 DIM C(2):A=B(0)+C(0)*2--3+A (B-1)
+3156 DIM C(2):A=B(0)+C(0)*2--3+A B(-1)
+3160 DIM C(2):A=B(0)+C(0)*2--3+A B1
+3170 DIM C(2):A=B(0)+C(0)*2--3+A B+1
+3200 DIM C(2):A=B(0)+C(0)*2--3+A -B+1
+3300 DIM C(2):A=B(0)+C(0)*2--3+A -B-1,C(1),-D E(0):' error
+3320 DIM C(2):A=B(0)+C(0)*2--3+A (-B-1,C(1),-D E(0)):
+3350 DIM C(2):A=B(0)+C(0)*2--3+A B-1,C(1),-D E(0):
+3360 DIM C(2):A=B(0)+C(0)*2--3+A 1-B,C(1),-D E(0):
 
 9000 DATA 0
 9100 DATA hoge

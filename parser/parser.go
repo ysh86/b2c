@@ -26,6 +26,7 @@ SOFTWARE.
 
 import (
 	"fmt"
+	"io"
 	"strconv"
 
 	"github.com/ysh86/b2c/ast"
@@ -138,6 +139,13 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 
 func (p *Parser) Errors() []string {
 	return p.errors
+}
+
+func (p *Parser) PrintErrors(w io.Writer) {
+	io.WriteString(w, "// parser errors:\n")
+	for _, msg := range p.Errors() {
+		io.WriteString(w, "//  "+msg+"\n")
+	}
 }
 
 func (p *Parser) peekError(t token.TokenType) {

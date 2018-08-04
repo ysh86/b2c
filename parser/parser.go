@@ -761,14 +761,22 @@ func (p *Parser) parseCallStatement() *ast.CallStatement {
 
 	f := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-	p.nextToken()
+	var exp *ast.CallExpression
+	if p.peekTokenIs(token.COLON) || p.peekTokenIs(token.LINENO) || p.peekTokenIs(token.EOF) {
+		// no args
+		exp = &ast.CallExpression{Token: t, Function: f}
+	} else {
+		p.nextToken()
 
-	exp := p.parseCallExpression(f)
-	if exp == nil {
-		return nil
+		e := p.parseCallExpression(f)
+		if ce, ok := e.(*ast.CallExpression); !ok || ce == nil {
+			return nil
+		} else {
+			exp = ce
+		}
 	}
 
-	stmt.Expression = exp.(*ast.CallExpression)
+	stmt.Expression = exp
 
 	if p.peekTokenIs(token.COLON) {
 		p.nextToken()

@@ -24,17 +24,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import "github.com/ysh86/b2c/token"
+import (
+	"io"
+	"strings"
+
+	"github.com/ysh86/b2c/token"
+)
 
 type Lexer struct {
-	input        string
-	position     int  // current position in input (points to current char)
-	readPosition int  // current reading position in input (after current char)
-	ch           byte // current char under examination
+	reader  io.Reader
+	isFirst bool // Is it the first token?
+	ch      byte // current char under examination
+	peekCh  byte // char after current char
 }
 
-func New(input string) *Lexer {
-	l := &Lexer{input: input}
+func New(r io.Reader) *Lexer {
+	l := &Lexer{reader: r, isFirst: true}
+	l.readChar()
 	l.readChar()
 	return l
 }
@@ -43,7 +49,8 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
 	isNewLine := l.skipWhitespace()
-	isNewLine = (isNewLine || l.position == 0)
+	isNewLine = (isNewLine || l.isFirst)
+	l.isFirst = false
 
 	switch l.ch {
 	case '+':
@@ -134,67 +141,74 @@ func (l *Lexer) skipWhitespace() (isNewLine bool) {
 }
 
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
-	} else {
-		l.ch = l.input[l.readPosition]
+	var p [1]byte
+
+	_, err := l.reader.Read(p[:])
+	if err != nil {
+		l.ch = l.peekCh
+		l.peekCh = 0
+		return
 	}
-	l.position = l.readPosition
-	l.readPosition += 1
+
+	l.ch = l.peekCh
+	l.peekCh = p[0]
 }
 
 func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	} else {
-		return l.input[l.readPosition]
-	}
+	return l.peekCh
 }
 
 func (l *Lexer) readData() string {
 	for isSpace(l.ch) {
 		l.readChar()
 	}
-	position := l.position // TODO: 数値か文字列("" は省略可)
+	// TODO: 数値か文字列("" は省略可)
+	var out strings.Builder
 	for l.ch != ':' && !isCRLF(l.ch) && l.ch != 0 { // TODO: , でつなげられる
+		out.WriteByte(l.ch)
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return out.String()
 }
 
 func (l *Lexer) readString() string {
-	position := l.position
+	var out strings.Builder
 	for l.ch != '"' && !isCRLF(l.ch) && l.ch != 0 {
+		out.WriteByte(l.ch)
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return out.String()
 }
 
 func (l *Lexer) readIdentifier() string {
-	position := l.position
+	var out strings.Builder
 	for isLetter(l.ch) || isDigit(l.ch) {
+		out.WriteByte(l.ch)
 		l.readChar()
 	}
 	if l.ch == '$' {
+		out.WriteByte(l.ch)
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return out.String()
 }
 
 func (l *Lexer) readInteger() string {
-	position := l.position
+	var out strings.Builder
 	for isDigit(l.ch) {
+		out.WriteByte(l.ch)
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return out.String()
 }
 
 func (l *Lexer) readNumber() string {
-	position := l.position
+	var out strings.Builder
 	for isDigit(l.ch) || l.ch == '.' {
+		out.WriteByte(l.ch)
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return out.String()
 }
 
 func isSpace(ch byte) bool {

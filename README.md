@@ -10,7 +10,8 @@ $ go get -u github.com/ysh86/b2c
 ## usage
 ```
 $ b2c --help
-
+Usage of b2c:
+  -c    do transpile
 ```
 
 ## license

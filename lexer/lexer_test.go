@@ -25,6 +25,7 @@ SOFTWARE.
 */
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/ysh86/b2c/token"
@@ -187,7 +188,7 @@ REM this is test
 		{token.EOF, ""},
 	}
 
-	l := New(input)
+	l := New(bytes.NewBufferString(input))
 
 	for i, tt := range tests {
 		tok := l.NextToken()

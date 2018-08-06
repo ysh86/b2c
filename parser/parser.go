@@ -137,15 +137,13 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	}
 }
 
-func (p *Parser) Errors() []string {
-	return p.errors
-}
-
 func (p *Parser) PrintErrors(w io.Writer) {
-	io.WriteString(w, "// parser errors:\n")
-	for _, msg := range p.Errors() {
+	io.WriteString(w, "// ERR: ========== parser ==========\n")
+	for _, msg := range p.errors {
 		io.WriteString(w, "//  "+msg+"\n")
 	}
+	io.WriteString(w, "\n")
+	p.errors = nil // clear messages
 }
 
 func (p *Parser) peekError(t token.TokenType) {
@@ -163,14 +161,18 @@ func (p *Parser) noPrefixParseFnError(t token.TokenType) {
 // Program
 // ------------------------------------------------------------
 
-func (p *Parser) ParseProgram() *ast.Program {
+func (p *Parser) ParseProgram(callback func(s string, isErrors bool)) *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
 	for !p.curTokenIs(token.EOF) {
 		stmt := p.parseStatement()
+		isErrors := len(p.errors) > 0
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
+			callback(stmt.String(), isErrors)
+		} else {
+			callback("", isErrors)
 		}
 		p.nextToken()
 	}

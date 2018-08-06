@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -17,14 +16,15 @@ func parse(r io.Reader, w io.Writer) error {
 	l := lexer.New(r)
 	p := parser.New(l)
 
-	program := p.ParseProgram()
-	if len(p.Errors()) != 0 {
-		p.PrintErrors(w)
-		return errors.New("Error!")
-	}
-
-	io.WriteString(w, program.String())
-	io.WriteString(w, "\n")
+	p.ParseProgram(func(s string, isErrors bool) {
+		if s != "" {
+			io.WriteString(w, s)
+			io.WriteString(w, "\n")
+		}
+		if isErrors {
+			p.PrintErrors(w)
+		}
+	})
 
 	return nil
 }

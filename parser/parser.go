@@ -43,7 +43,7 @@ const (
 	LESSGREATER // > or <
 	SUM         // + or -
 	PRODUCT     // / or *
-	PREFIX      // -X
+	PREFIX      // -X, CHR$
 	CALL        // myFunction(X) or (group)
 )
 
@@ -833,7 +833,9 @@ func (p *Parser) curPrecedence() int {
 func (p *Parser) parseIdentifier() ast.Expression {
 	var ident ast.Expression
 
-	if _, ok := p.dimVars[p.curToken.Literal]; ok {
+	if p.curToken.Literal == "CHR$" { // TODO: テーブルにしないと
+		return p.parsePrefixExpression()
+	} else if _, ok := p.dimVars[p.curToken.Literal]; ok {
 		name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 		if !p.expectPeek(token.LPAREN) {

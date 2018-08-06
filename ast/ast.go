@@ -405,8 +405,8 @@ func (cs *CallStatement) String() string {
 
 // Expressions
 type Identifier struct {
-	Token token.Token // the token.IDENT token
-	Value string
+	Token   token.Token // the token.IDENT token
+	Value   string
 	Indices []Expression
 }
 
@@ -434,6 +434,23 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (sl *StringLiteral) expressionNode()      {}
+func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
+func (sl *StringLiteral) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("\"")
+	out.WriteString(sl.Value)
+	out.WriteString("\"")
+
+	return out.String()
+}
 
 type PrefixExpression struct {
 	Token    token.Token // The prefix token, e.g. -

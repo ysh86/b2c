@@ -43,7 +43,7 @@ const (
 	LESSGREATER // > or <
 	SUM         // + or -
 	PRODUCT     // / or *
-	PREFIX      // -X, CHR$
+	PREFIX      // -X, LEN etc.
 	CALL        // myFunction(X) or (group)
 )
 
@@ -90,6 +90,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.NUM, p.parseIntegerLiteral) // TODO: float
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	p.registerPrefix(token.LEN, p.parsePrefixExpression)
+	p.registerPrefix(token.ASC, p.parsePrefixExpression)
+	p.registerPrefix(token.CHR_D, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -833,9 +836,7 @@ func (p *Parser) curPrecedence() int {
 func (p *Parser) parseIdentifier() ast.Expression {
 	var ident ast.Expression
 
-	if p.curToken.Literal == "CHR$" { // TODO: テーブルにしないと
-		return p.parsePrefixExpression()
-	} else if _, ok := p.dimVars[p.curToken.Literal]; ok {
+	if _, ok := p.dimVars[p.curToken.Literal]; ok {
 		name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 		if !p.expectPeek(token.LPAREN) {

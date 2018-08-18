@@ -58,6 +58,10 @@ const (
 	// Special keywords
 	LET  = "LET"
 	CALL = "CALL"
+	// Prefix
+	LEN   = "LEN"
+	ASC   = "ASC"
+	CHR_D = "CHR$"
 	// Keywords
 	DIM    = "DIM"
 	IF     = "IF"
@@ -83,6 +87,9 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
+	"LEN":    LEN,
+	"ASC":    ASC,
+	"CHR$":   CHR_D,
 	"DIM":    DIM,
 	"IF":     IF,
 	"THEN":   THEN,

@@ -839,16 +839,19 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	if _, ok := p.dimVars[p.curToken.Literal]; ok {
 		name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-		if !p.expectPeek(token.LPAREN) {
-			return nil
+		if p.peekTokenIs(token.LPAREN) { // TODO: () なしはスカラになる
+			if !p.expectPeek(token.LPAREN) {
+				return nil
+			}
+
+			indices := p.parseIndices()
+			if indices == nil {
+				return nil
+			}
+
+			name.Indices = indices
 		}
 
-		indices := p.parseIndices()
-		if indices == nil {
-			return nil
-		}
-
-		name.Indices = indices
 		ident = name
 	} else if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.NUM) /*|| p.peekTokenIs(token.MINUS)*/ {
 		f := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}

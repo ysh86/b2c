@@ -241,6 +241,13 @@ func (p *Parser) parseStatement() ast.Statement {
 			return s
 		}
 		return nil
+	case token.NEXT:
+		msg := fmt.Sprintf("invalid statement: %s", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		if p.peekTokenIs(token.COLON) {
+			p.nextToken()
+		}
+		return nil
 	case token.IDENT:
 		if p.peekToken.Type == token.EQ {
 			if s := p.parseLetStatement(); s != nil {
@@ -417,12 +424,15 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 
 	stmts := p.parseStatements(token.ELSE, true)
 	if stmts == nil {
+		// TODO: error message
 		return nil
 	}
 
 	stmt.Consequence = stmts
 
-	if p.curTokenIs(token.ELSE) {
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+
 		if p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.NUM) {
 			// overwrite the 'ELSE' token
 			p.curToken.Type = token.GOTO
@@ -433,6 +443,7 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 
 		stmts := p.parseStatements(token.LINENO, true)
 		if stmts == nil {
+			// TODO: error message
 			return nil
 		}
 
@@ -628,13 +639,13 @@ func (p *Parser) parseForStatement() *ast.ForStatement {
 
 	stmts := p.parseStatements(token.NEXT, false)
 	if stmts == nil {
+		// TODO: error message
 		return nil
 	}
 
 	stmt.Statements = stmts
 
-	if !p.curTokenIs(token.NEXT) {
-		// TODO: error message
+	if !p.expectPeek(token.NEXT) {
 		return nil
 	}
 
@@ -748,14 +759,27 @@ func (p *Parser) parseIndices() []ast.Expression {
 func (p *Parser) parseStatements(stopToken token.TokenType, stopByLine bool) []ast.Statement {
 	statements := []ast.Statement{}
 
-	for !p.curTokenIs(stopToken) && !(stopByLine && p.curTokenIs(token.LINENO)) && !p.curTokenIs(token.EOF) {
+	if p.curTokenIs(stopToken) || (stopByLine && p.curTokenIs(token.LINENO)) || p.curTokenIs(token.EOF) {
+		// TODO: error message
+		return statements
+	}
+
+	stmt := p.parseStatement()
+	if stmt != nil {
+		statements = append(statements, stmt)
+	} else {
+		// ignore errors because the 'REM' statement returns nil
+	}
+
+	for !p.peekTokenIs(stopToken) && !(stopByLine && p.peekTokenIs(token.LINENO)) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+
 		stmt := p.parseStatement()
 		if stmt != nil {
 			statements = append(statements, stmt)
 		} else {
 			// ignore errors because the 'REM' statement returns nil
 		}
-		p.nextToken()
 	}
 
 	return statements
